@@ -1,0 +1,164 @@
+version: '2.4'
+
+networks:
+  monitor-net:
+    driver: bridge
+
+services:
+
+### Should be used  not via Docker and via systemctl unit 
+#  nodeexporter:
+#    image: prom/node-exporter:v0.18.1
+#    container_name: nodeexporter
+#    volumes:
+#      - /proc:/host/proc:ro
+#      - /sys:/host/sys:ro
+#      - /:/rootfs:ro
+#    command:
+#      - '--path.procfs=/host/proc'
+#      - '--path.rootfs=/rootfs'
+#      - '--path.sysfs=/host/sys'
+#      - '--collector.filesystem.ignored-mount-points=^/(sys|proc|dev|host|etc)($$|/)'
+#    restart: unless-stopped
+#    networks:
+#      - monitor-net
+#    expose:
+#      - 9100
+#    ports:
+#      - "<tunnel_ip_address_target>:9100:9100"
+#    mem_limit: 128m
+#    mem_reservation: 64m
+#       driver: "json-file"
+#       options:
+#         max-size: "5m"
+
+  cadvisor:
+    image: google/cadvisor:v0.33.0
+    container_name: cadvisor
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:rw
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /cgroup:/cgroup:ro
+    restart: unless-stopped
+    networks:
+      - monitor-net
+    expose:
+      - 8080
+    ports:
+      - "<tunnel_ip_address_target>:8888:8080"
+    mem_limit: 128m
+    mem_reservation: 64m
+    logging:
+        driver: "json-file"
+        options:
+          max-size: "5m"
+
+
+#### NGINX Exporter #########################################
+  nginx-exporter:
+    image: nginx/nginx-prometheus-exporter:0.4.2
+    container_name: nginx-exporter
+    restart: unless-stopped
+    environment:
+      - SCRAPE_URI=http://nginx/nginx_status
+      - TELEMETRY_PATH=/metrics
+      - NGINX_RETRIES=10
+    ports:
+      - "${OPENVPN_TUNNEL_MONITORING_IP}:9113:9113"
+    networks:
+      - frontend
+    #mem_limit: 128m
+    #mem_reservation: 64m
+    logging:
+        driver: "json-file"
+        options:
+          max-size: "5m"
+
+#### PHP-FPM Exporter #########################################
+  php-fpm-exporter:
+    image: bakins/php-fpm-exporter:v0.6.1
+    container_name: php-fpm-exporter
+    restart: unless-stopped
+    command: ["--endpoint", "http://nginx/fpm_status", "--addr", "0.0.0.0:8080"]
+    ports:
+      - "${OPENVPN_TUNNEL_MONITORING_IP}:9114:8080"
+    networks:
+    #  - frontend
+      - backend
+    #mem_limit: 128m
+    #mem_reservation: 64m
+    logging:
+        driver: "json-file"
+        options:
+          max-size: "5m"
+
+#### Redis Exporter #########################################
+  redis-exporter:
+    image: oliver006/redis_exporter:alpine
+    container_name: redis-exporter
+    restart: unless-stopped
+    command: ["--redis.addr", "redis://redis:6379"]
+    ports:
+      - "${OPENVPN_TUNNEL_MONITORING_IP}:9121:9121"
+    networks:
+      - backend
+    #mem_limit: 128m
+    #mem_reservation: 64m
+    logging:
+        driver: "json-file"
+        options:
+          max-size: "5m"
+
+#### Beanstalkd Exporter #########################################
+  beanstalkd-exporter:
+    build: ./beanstalkd-exporter/
+    container_name: beanstalkd-exporter
+    restart: unless-stopped
+    command: ["-beanstalkd.address", "beanstalkd:11300", "-web.listen-address", "0.0.0.0:8080", "-num-tube-stat-workers", "13", "-sleep-between-tube-stats", "500"]
+    ports:
+      - "${OPENVPN_TUNNEL_MONITORING_IP}:9127:8080"
+    networks:
+      - backend
+    #mem_limit: 128m
+    #mem_reservation: 64m
+    logging:
+        driver: "json-file"
+        options:
+          max-size: "5m"
+
+#### MySQL Exporter #########################################
+  mysql-exporter:
+    image: prom/mysqld-exporter
+    container_name: mysql-exporter
+    restart: unless-stopped
+    environment:
+    - DATA_SOURCE_NAME=${MYSQL_USER_EXPORTER}:${MYSQL_PASSWORD_EXPORTER}@(mysql:3306)/
+    ports:
+      - "${OPENVPN_TUNNEL_MONITORING_IP}:9104:9104"
+    networks:
+      - backend
+    #mem_limit: 128m
+    #mem_reservation: 64m
+    logging:
+        driver: "json-file"
+        options:
+          max-size: "5m"
+
+#### Redis Sentinel Exporter #########################################
+  redis-exporter-sentinel-2:
+    container_name: redis-exporter-sentinel-2
+    build: ./redis-sentinel-exporter/
+    restart: unless-stopped
+    command: ["python", "sentinel_exporter.py", "-H", "redis_sentinel", "-p", "26379", "-i", "15", "-m", "9124"]
+    ports:
+      - "${OPENVPN_TUNNEL_MONITORING_IP}:9122:9124"
+#    networks:
+#     - marketprice_default
+    #mem_limit: 128m
+    #mem_reservation: 64m
+    logging:
+        driver: "json-file"
+        options:
+          max-size: "5m"

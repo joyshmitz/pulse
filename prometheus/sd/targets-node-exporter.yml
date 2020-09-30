@@ -1,0 +1,13 @@
+---
+- targets:
+  - server1.mydomain.com:9100
+  - server2.mydomain.com:9100
+  labels:
+    env: staging
+    job: node-exporter
+- targets:
+  - server3.mydomain.com:9100
+  - server4.mydomain.com:9100
+  labels:
+    env: prod
+    job: node-exporter

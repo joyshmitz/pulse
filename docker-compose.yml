@@ -1,0 +1,188 @@
+version: '2.4'
+
+networks:
+  monitor-net:
+    driver: bridge
+
+volumes:
+    prometheus_data: {}
+    grafana_data: {}
+    alertmanager_data: {}
+
+services:
+
+  prometheus:
+    image: prom/prometheus:v${PROMETHEUS_VERSION}
+    container_name: prometheus
+    volumes:
+      - ./prometheus/:/etc/prometheus/
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=1500h'
+      - '--web.enable-lifecycle'
+    extra_hosts:
+     - "server1.mydomain.com:10.10.10.1"
+     - "server2.mydomain.com:10.10.10.2"
+     - "server3.mydomain.com:10.10.10.3"
+     - "server4.mydomain.com:10.10.10.4"
+
+    restart: unless-stopped
+    expose:
+      - 9090
+    networks:
+      - monitor-net
+    mem_limit: ${PROMETHEUS_MEM_LIMIT}
+    mem_reservation: ${PROMETHEUS_MEM_RESERVATION}
+    labels:
+      org.label-schema.group: "monitoring"
+
+  alertmanager:
+    image: ${DOCKER_REGISTRY_URL}/alertmanager:v${ALERTMANGER_VERSION}
+    container_name: alertmanager
+    volumes:
+      #- ./alertmanager/conf:/etc/alertmanager/
+      - alertmanager_data:/alertmanager
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+      - '--storage.path=/alertmanager'
+    environment:
+      - SLACK_URL=${SLACK_URL}
+      - SLACK_CHANNEL=${SLACK_CHANNEL}
+      - SLACK_USER=${SLACK_USER:-alertmanager}
+
+    restart: unless-stopped
+    expose:
+      - 9093
+    networks:
+      - monitor-net
+    mem_limit: ${ALERTMANGER_MEM_LIMIT}
+    mem_reservation: ${ALERTMANGER_MEM_RESERVATION}
+    labels:
+      org.label-schema.group: "monitoring"
+    logging:
+        driver: "json-file"
+        options:
+          max-size: "5m"  
+
+  nodeexporter:
+    image: prom/node-exporter:v${NODE_EXPORTER_VERSION}
+    container_name: nodeexporter
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.rootfs=/rootfs'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.ignored-mount-points=^/(sys|proc|dev|host|etc)($$|/)'
+    restart: unless-stopped
+    expose:
+      - 9100
+    networks:
+      - monitor-net
+    mem_limit: ${NODE_EXPORTER_MEM_LIMIT}
+    mem_reservation: ${NODE_EXPORTER_MEM_RESERVATION}
+    labels:
+      org.label-schema.group: "monitoring"
+    logging:
+        driver: "json-file"
+        options:
+          max-size: "5m"  
+
+  cadvisor:
+    image: google/cadvisor:v${CADVISOR_VERSION}
+    container_name: cadvisor
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:rw
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /cgroup:/cgroup:ro #doesn't work on MacOS only for Linux
+    restart: unless-stopped
+    expose:
+      - 8080
+    networks:
+      - monitor-net
+    mem_limit: ${CADVISOR_MEM_LIMIT}
+    mem_reservation: ${CADVISOR_MEM_RESERVATION}
+    labels:
+      org.label-schema.group: "monitoring"
+    logging:
+        driver: "json-file"
+        options:
+          max-size: "5m"
+
+  grafana:
+    image: grafana/grafana:${GRAFANA_VERSION}
+    container_name: grafana
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/datasources:/etc/grafana/datasources
+      - ./grafana/dashboards:/etc/grafana/dashboards
+      - ./grafana/setup.sh:/setup.sh
+    entrypoint: /setup.sh
+    environment:
+      - GF_SECURITY_ADMIN_USER=${ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_METRICS_ENABLED=false
+    restart: unless-stopped
+    expose:
+      - 3000
+    networks:
+      - monitor-net
+    mem_limit: ${GRAFANA_MEM_LIMIT}
+    mem_reservation: ${GRAFANA_MEM_RESERVATION}
+    labels:
+      org.label-schema.group: "monitoring"
+    logging:
+        driver: "json-file"
+        options:
+          max-size: "5m"
+
+  pushgateway:
+    image: prom/pushgateway:v${PUSHGATEWAY_VERSION}
+    container_name: pushgateway
+    restart: unless-stopped
+    expose:
+      - 9091
+    networks:
+      - monitor-net
+    labels:
+      org.label-schema.group: "monitoring"
+    mem_limit: ${PUSHGATEWAY_MEM_LIMIT}
+    mem_reservation: ${PUSHGATEWAY_MEM_RESERVATION}
+    logging:
+        driver: "json-file"
+        options:
+          max-size: "5m"
+
+  caddy:
+    image: ${DOCKER_REGISTRY_URL}/caddy:${CADDY_VERSION}
+    container_name: caddy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile
+      - ./caddy/.caddy:/root/.caddy:rw
+    environment:
+      - ADMIN_USER=${ADMIN_USER:-admin}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin}
+    restart: unless-stopped
+    networks:
+      - monitor-net
+    mem_limit: ${CADDY_MEM_LIMIT}
+    mem_reservation: ${CADDY_MEM_RESERVATION}
+    labels:
+      org.label-schema.group: "monitoring"
+    logging:
+        driver: "json-file"
+        options:
+          max-size: "5m"
+

@@ -1,0 +1,25 @@
+route:
+    receiver: 'slack'
+    #group_wait: 5s
+    group_interval: 60s
+    repeat_interval: 168h
+
+receivers:
+    - name: 'slack'
+      slack_configs:
+          - send_resolved: true
+            title: '{{ template "custom_title" . }}'
+            text: '{{ template "custom_slack_message" . }}'
+            #username: <user>#
+            #channel: <channel>#
+            #api_url: <url>#
+templates:
+- /etc/alertmanager/notifications.tmpl
+
+inhibit_rules:
+- source_match:
+    severity: 'critical'
+  target_match:
+    severity: 'warning'
+  # Apply inhibition if the instance and alertname are the same.
+  equal: ['instance', 'alertname']

@@ -1,0 +1,42 @@
+prometheus.mydomain.com {
+    basicauth / {$ADMIN_USER} {$ADMIN_PASSWORD}
+    proxy / prometheus:9090 {
+            transparent
+        }
+
+   errors stderr
+#    tls off
+}
+
+alertmanager.mydomain.com {
+    basicauth / {$ADMIN_USER} {$ADMIN_PASSWORD}
+    proxy / alertmanager:9093 {
+            transparent
+        }
+
+    errors stderr
+#    tls off
+}
+
+pushgateway.mydomain.com {
+    basicauth / {$ADMIN_USER} {$ADMIN_PASSWORD}
+    proxy / pushgateway:9091 {
+            transparent
+        }
+
+    errors stderr
+#    tls off
+}
+
+
+grafana.mydomain.com {
+    proxy / grafana:3000 {
+            transparent
+            websocket
+        }
+
+    errors stderr
+#    tls off
+}
+
+

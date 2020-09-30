@@ -1,0 +1,13 @@
+---
+- targets:
+  - server1.mydomain.com:8888
+  - server2.mydomain.com:8888
+  labels:
+    env: staging
+    job: cadvisor
+- targets:
+  - server3.mydomain.com:8888
+  - server4.mydomain.com:8888
+  labels:
+    env: prod
+    job: cadvisor

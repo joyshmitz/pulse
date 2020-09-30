@@ -1,0 +1,58 @@
+groups:
+- name: containers
+  rules:
+ 
+  - alert: Some container is down on the host server1
+    expr: 
+        absent (container_start_time_seconds{image!="",instance="server1.mydomain.com:8888",name=~".+mysql.+"} )
+    for: 1m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Critical: Some container is down on the host {{ $labels.instance }} for more than 1 minutes"
+      description: "Some container is down on the host {{ $labels.instance }}"
+  
+
+  - alert: Some container is down on the host server2
+    expr: 
+        absent (container_start_time_seconds{image!="",instance="server2.mydomain.com:8888",name=~".+redis.+"} ) or
+        absent (container_start_time_seconds{image!="",instance="server2.mydomain.com:8888",name=~".+nginx.+"} )
+    for: 1m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Critical: Some container is down on the host {{ $labels.instance }} for more than 1 minutes"
+      description: "Some container is down on the host {{ $labels.instance }}"
+
+
+  - alert: Some container is down on the host server3
+    expr: 
+        absent (container_start_time_seconds{image!="",instance="server3.mydomain.com:8888",name=~".+nginx.+"} ) or
+        absent (container_start_time_seconds{image!="",instance="server3.mydomain.com:8888",name=~".+php-fpm.+"} ) or
+        absent (container_start_time_seconds{image!="",instance="server3.mydomain.com:8888",name=~".+redis.+"} ) or
+        absent (container_start_time_seconds{image!="",instance="server3.mydomain.com:8888",name=~".+varnish.+"} ) or
+        absent (container_start_time_seconds{image!="",instance="server3.mydomain.com:8888",name=~".+mysql.+"} ) 
+    for: 1m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Critical: Some container is down on the host {{ $labels.instance }} for more than 1 minutes"
+      description: "Some container is down on the host {{ $labels.instance }}"
+
+  
+
+  - alert: Some container is down on the host server4
+    expr: 
+        absent (container_start_time_seconds{image!="",instance="server4:8888",name=~".+beanstalkd.+"} ) or
+        absent (container_start_time_seconds{image!="",instance="server4:8888",name=~".+nginx.+"} ) or
+        absent (container_start_time_seconds{image!="",instance="server4:8888",name=~".+php-fpm.+"} ) or
+        absent (container_start_time_seconds{image!="",instance="server4:8888",name=~".+php-worker.+"} ) or
+        absent (container_start_time_seconds{image!="",instance="server4:8888",name=~".+redis.+"} ) or
+        absent (container_start_time_seconds{image!="",instance="server4:8888",name=~".+mysql.+"} )
+    for: 1m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Critical: Some container is down on the host {{ $labels.instance }} for more than 1 minutes"
+      description: "Some container is down on the host {{ $labels.instance }}"
+
