@@ -85,7 +85,7 @@ CADDY_MEM_RESERVATION=64m
 ## 2. Собрать и загрузить в приватный Docker-репозитарий образ для Alertmanager
 
 ```bash
-# cd  monstack/alertmanager
+# cd  pulse/alertmanager
 # docker build -t docker-repo.mydomain.com:5000/alertmanager:v0.17.0 .
 # docker push docker-repo.mydomain.com:5000/alertmanager:v0.17.0
 ```
@@ -122,7 +122,7 @@ https://caddyserver.com/docs/automatic-https
 Запуск мониторинг стека выполняется командой
 
 ```bash
-# cd monstack && docker-compose up -d
+# cd pulse && docker-compose up -d
 ```
 
 Docker-compose.yml имеет вид
@@ -349,14 +349,14 @@ SLACK_URL, SLACK_CHANNEL, SLACK_USER в конфигурационный фай�
 Если необходимо изменить настройки в конфигурационном файле alertmanager.yml, тогда пересобираем образ и пересоздаем контейнер с alertmanager
 
 ```bash
-# cd  monstack/alertmanager
+# cd  pulse/alertmanager
 # docker build -t docker-repo.mydomain.com:5000/alertmanager:v0.17.0 .
 # docker push docker-repo.mydomain.com:5000/alertmanager:v0.17.0
-# cd  ../monstack && docker-compose up -d  alertmanager
+# cd  ../pulse && docker-compose up -d  alertmanager
 ```
 Либо с помощью одной команды
 ```bash
-# ( cd monstack/alertmanager && docker build -t docker-repo.mydomain.com:5000/alertmanager:v0.17.0 . && docker push docker-repo.mydomain.com:5000/alertmanager:v0.17.0 && cd ../ && docker-compose up -d alertmanager)
+# ( cd pulse/alertmanager && docker build -t docker-repo.mydomain.com:5000/alertmanager:v0.17.0 . && docker push docker-repo.mydomain.com:5000/alertmanager:v0.17.0 && cd ../ && docker-compose up -d alertmanager)
 ```
 После чего проверить наличие сделанных в Alertmanager GUI
 https://alertmanager.mydomain.com
@@ -436,7 +436,7 @@ Pushgateway
 ```
 ### Конфигурационный файл Prometheus – prometheus.yml имеет вид
 
-# nano monstack/prometheus/prometheus.yml
+# nano pulse/prometheus/prometheus.yml
 ```bash
 global:
   scrape_interval:     15s
@@ -583,7 +583,7 @@ services:
 3.Пересобрать Prometheus контейнер и проверить налиичие добавленных строк в файле /etc/hosts внутри Prometheus-экспортера
 
 ```bash
-# cd ~/monstack && docker-compose up -d  prometheus
+# cd ~/pulse && docker-compose up -d  prometheus
 # dce prometheus cat /etc/hosts
 ```
 
@@ -983,7 +983,7 @@ groups:
 2.Прверка синтаксиса основного конфигурационного файла prometheus и всех подключаемых файлов с правилами
 
 ```bash
-# (cd ./monstack && ../prometheus-x.x.x.linux-amd64/promtool check config ./prometheus/prometheus.yml && echo OK || echo FAIL)
+# (cd ./pulse && ../prometheus-x.x.x.linux-amd64/promtool check config ./prometheus/prometheus.yml && echo OK || echo FAIL)
 ```
 
 Как получить утилиту promtool?, она лежит в архиве прометея https://github.com/prometheus/prometheus/releases/download/v2.21.0/prometheus-2.21.0.linux-amd64.tar.gz после распаковки найдете в директории
