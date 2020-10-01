@@ -959,7 +959,6 @@ groups:
       summary: "Critical: Some container is down on the host {{ $labels.instance }} for more than 1 minutes"
       description: "Some container is down on the host {{ $labels.instance }}"
  
-  
  
   - alert: Some container is down on the host server4
     expr: 
