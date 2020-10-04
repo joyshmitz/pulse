@@ -1,6 +1,7 @@
 A Monitoring stack for Docker hosts and containers adopted to personal requirement
 
 ***Original [stefanprodan/dockprom](https://github.com/stefanprodan/dockprom)***
+***Original [Evgeniy Kamenev](https://kamaok.org.ua/?p=3332)***
 
 Мониторинг стек состоит из следующих компонентов:
 
